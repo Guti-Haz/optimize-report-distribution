@@ -1,6 +1,6 @@
 pacman::p_load(data.table,pbapply,magrittr,glue)
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
-# helper FX
+# helper FX ----
 rand_vect=function(N, M, sd = 1, pos.only = TRUE) {
   vec <- rnorm(N, M/N, sd)
   if (abs(sum(vec)) < 0.01) vec <- vec + 1
@@ -18,15 +18,16 @@ rand_vect=function(N, M, sd = 1, pos.only = TRUE) {
   vec
 }
 rangE=function(v){max(v)-min(v)}
-# fixed 1
+# fixed ----
 no_reports=1e5 #rough STR est. per year
 no_days=365-(8*12)-20 # removes weekend and holidays
 days=seq(no_days)
 no_analyst=20
 no_leaves=24
-# no. of simulations
-N=1e4 # no of simulation
-# simulation (1) no STR if leaves >= 3 days (fully exploit) ----
+# no. of simulations ----
+N=1e4
+# simulations ----
+## simulation (1) no STR if leaves >= 3 days (fully exploit) ----
 sim1=function(){
   randomLeave=function(){
     t=sample(seq(31-3),1)
@@ -54,7 +55,7 @@ sim1=function(){
 }
 pbreplicate(N,sim1())%>%
   saveRDS(glue("res_sim1_{N}_times.rds"))
-# simulation (2) no STR if leaves >= 1 day ----
+## simulation (2) no STR if leaves >= 1 day ----
 sim2=function(){
   workingDays=replicate(no_analyst,days[!days%in%sample(seq(no_days),no_leaves)],simplify=F)
   dailySTR=rand_vect(no_days,no_reports)
@@ -72,8 +73,12 @@ sim2=function(){
 }
 pbreplicate(N,sim2())%>%
   saveRDS(glue("res_sim2_{N}_times.rds"))
-# view results
-p1=readRDS("res_sim1_100_times.rds")%>%hist
-p2=readRDS("res_sim2_100_times.rds")%>%hist
-plot(p1,col=rgb(0,0,1,1/4),xlim=c(0,100),ylim=c(0,40))
-plot(p2,col=rgb(1,0,0,1/4),xlim=c(0,100),ylim=c(0,40),add=T)
+# results ----
+rds=list.files(pattern="rds")
+p1=readRDS(rds[1])%>%hist
+p2=readRDS(rds[2])%>%hist
+xlim=c(min(c(p1$breaks,p2$breaks)),max(c(p1$breaks,p2$breaks)))
+ylim=c(min(c(p1$counts,p2$counts)),max(c(p1$counts,p2$counts)))
+title="green=1d,blue=3d"
+plot(p1,col=rgb(0,0,1,1/4),xlim=xlim,ylim=ylim,main=title)
+plot(p2,col=rgb(1,0,0,1/4),xlim=xlim,ylim=ylim,add=T,main=title)
