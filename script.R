@@ -1,4 +1,4 @@
-pacman::p_load(data.table,pbapply,magrittr,glue)
+pacman::p_load(data.table,pbapply,magrittr,glue,ggplot2)
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 # helper FX ----
 rand_vect=function(N, M, sd = 1, pos.only = TRUE) {
@@ -75,10 +75,7 @@ pbreplicate(N,sim2())%>%
   saveRDS(glue("res_sim2_{N}_times.rds"))
 # results ----
 rds=list.files(pattern="rds")
-p1=readRDS(rds[1])%>%hist
-p2=readRDS(rds[2])%>%hist
-xlim=c(min(c(p1$breaks,p2$breaks)),max(c(p1$breaks,p2$breaks)))
-ylim=c(min(c(p1$counts,p2$counts)),max(c(p1$counts,p2$counts)))
-title="green=1d,blue=3d"
-plot(p1,col=rgb(0,0,1,1/4),xlim=xlim,ylim=ylim,main=title)
-plot(p2,col=rgb(1,0,0,1/4),xlim=xlim,ylim=ylim,add=T,main=title)
+rbindlist(list(data.table(sim=readRDS(rds[1]),type="sim1"),
+               data.table(sim=readRDS(rds[2]),type="sim2")))%>%
+  ggplot(aes(type,sim))+
+  geom_boxplot()
